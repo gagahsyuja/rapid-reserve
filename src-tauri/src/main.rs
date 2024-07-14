@@ -25,6 +25,8 @@ fn main() -> Result<(), Error>
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
 
+            get_database_path,
+
             get_all_guests,
             add_guest,
             remove_guest,
@@ -50,7 +52,9 @@ fn main() -> Result<(), Error>
             get_all_invoices,
             add_invoice,
             get_invoice_information,
-            set_invoice_payment_status
+            set_invoice_payment_status,
+            set_additional_items,
+            get_guest_id_from_invoice
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,29 +1,30 @@
 use std::path::PathBuf;
-use std::fs::create_dir_all;
 use rusqlite::{ Connection, Result };
-use home::home_dir;
+use tauri::api::path::local_data_dir;
+
+#[tauri::command]
+pub fn get_database_path() -> String
+{
+    match local_data_dir()
+    {
+        Some(dir) => {
+            let path: PathBuf = [dir.to_str().unwrap(), "rapid-reserve-data.db"].iter().collect();
+            path.to_string_lossy().to_string()
+        },
+        None => "none".to_string()
+    }
+}
 
 pub fn get_connection() -> Result<Connection>
 {
-    // let conn = match home_dir()
-    // {
-        // Some(dir) => {
-            //
-            // let mut path: PathBuf = [dir.to_str().unwrap(), ".local", "share", "rapid-reserve"].iter().collect();
-            //
-            // if !path.exists()
-            // {
-            //     create_dir_all(&path).unwrap();
-            // }
-            //
-            // path.push("db.sql");
-
-            Connection::open("rapid-reserve.db")
-        // }
-
-    // };
-
-    // conn
+    match local_data_dir()
+    {
+        Some(dir) => {
+            let path: PathBuf = [dir.to_string_lossy().to_string(), "rapid-reserve-data.db".to_string()].iter().collect();
+            Connection::open(path)
+        },
+        None => Connection::open_in_memory()
+    }
 }
 
 pub fn setup(conn: Connection) -> Result<()>

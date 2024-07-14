@@ -1,11 +1,10 @@
 <script lang="ts">
     import Button from '$lib/component/Button.svelte';
-    import Popup from '$lib/component/PopupModal.svelte';
     import Modal from '$lib/component/PopupModal.svelte';
     import CloseButton from '$lib/component/CloseButton.svelte';
     import Success from '$lib/component/Success.svelte';
+    import Invoice from '../Invoice.svelte';
     import { invoke } from '@tauri-apps/api/tauri';
-    import { onMount } from 'svelte';
 
     export let showCheckOut: boolean = false;
 
@@ -14,7 +13,15 @@
 
     let searchKeyword: string = '';
 
-    let showPopup: boolean = false;
+    let showDetail: boolean = false;
+    let showAdditional: boolean = false;
+
+    let mineralWaterAmount: number = 0;
+    let snacksAmount: number = 0;
+
+    let guestId: number = 0;
+    let amountToPay: number = 0;
+    let json: any = null;
 
     let currentDate = new Date().toJSON().slice(0, 10);
 
@@ -36,6 +43,13 @@
         return JSON.parse(guest);
     }
 
+    const getRoomInformation = async (id: number) => {
+        
+        let room: string = await invoke('get_room_information', { id });
+
+        return JSON.parse(room);
+    }
+
     const checkOutGuest = async (id: number, status: boolean) => {
         await invoke('set_check_out_status', { guestId: id, status });
     }
@@ -47,16 +61,61 @@
                 checkOutGuest(id, true).then(() => {
                     invoke('set_report_actual_check_out_date', { guestId: id, date: currentDate }).then(() => {
                         getAllGuests();
-                        showPopup = true;
+                        guestId = id;
+                        showAdditional = true;
                     })
                 })
             });
         });
     }
 
-    onMount(() => {
-        getAllGuests().then(() => console.log(guests));
-    })
+    const getInvoiceInformation = async (id: number) => {
+
+        let invoice: string = await invoke('get_invoice_information', { guestId: id });
+
+        let json = JSON.parse(invoice);
+
+        json[0].itemsJson = JSON.parse(json[0].itemsJson);
+
+        return json;
+    }
+
+    const addAdditional = (id: number) => {
+
+        getGuestInformation(id).then(guest => {
+
+            getRoomInformation(guest[0].roomId).then(room => {
+
+                amountToPay = (room[0].price * guest[0].duration);
+                
+                getInvoiceInformation(id).then(information => {
+                    
+                    json = information[0].itemsJson;
+
+                    for (let i of json.price.keys()) {
+                        amountToPay += json.price[i];
+                    }
+
+                    if (mineralWaterAmount !== 0) {
+                        json.items.push("mineral water");
+                        json.amount.push(mineralWaterAmount);
+                        json.price.push(15000);
+                        amountToPay += (15000 * mineralWaterAmount);
+                    }
+
+                    if (snacksAmount !== 0) {
+                        json.items.push("snacks")
+                        json.amount.push(snacksAmount);
+                        json.price.push(30000);
+                        amountToPay += (30000 * snacksAmount);
+                    }
+
+                    invoke('set_additional_items', { guestId: id, itemsJson: JSON.stringify(json), amountToPay })
+                        .then(() => showDetail = true);
+                });
+            })
+        })
+    }
 </script>
 
 {#await getAllGuests() then}
@@ -97,7 +156,61 @@
         </div>
     </Modal>
 
-    {#if showPopup}
-        <Success message="Check out successful" on:click={() => showPopup = false} />
+    <!-- {#if showPopup} -->
+    <!--     <Success message="Check out successful" on:click={() => showPopup = false} /> -->
+    <!-- {/if} -->
+
+    {#if showDetail}
+        {#await getInvoiceInformation(guestId) then invoiceDetail}
+            {#await getGuestInformation(guestId) then guest}
+                {#await getRoomInformation(guest[0].roomId) then room}
+                    <Invoice
+                        id={invoiceDetail[0].id}
+                        date={invoiceDetail[0].date}
+                        dueDate={invoiceDetail[0].dueDate}
+                        fullname={guest[0].fullName}
+                        contact={guest[0].contactInfo}
+                        items={json}
+                        duration={guest[0].duration}
+                        roomPrice={room[0].price}
+                        bedType={room[0].bedType}
+                        totalAmount={amountToPay}
+                        bind:showDetail
+                    />
+                {/await}
+            {/await}
+        {/await}
+    {/if}
+
+    {#if showAdditional}
+        <Modal title="Additional Items">
+            <div class="flex flex-col justify-center pt-8">
+                <div class="flex flex-row items-center font-bold justify-center">
+                    <h1 class="min-w-[180px]">MINERAL WATER</h1>
+                    <input
+                        class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none min-w-[260px] max-w-[260px]"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="5"
+                        bind:value={mineralWaterAmount}
+                        placeholder="Amount of mineral water"
+                        required
+                    />
+                </div>
+                <div class="flex flex-row items-center font-bold justify-center mb-[10%]">
+                    <h1 class="min-w-[180px]">SNACKS</h1>
+                    <input
+                        class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none min-w-[260px] max-w-[260px]"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="5"
+                        bind:value={snacksAmount}
+                        placeholder="Amount of snacks"
+                        required
+                    />
+                </div>
+                <Button on:click={() => { addAdditional(guestId); showAdditional = false }} name="Continue" fg="everforest-black" bg="everforest-green" />
+            </div>
+        </Modal>
     {/if}
 {/await}

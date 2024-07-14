@@ -7,14 +7,14 @@
     export let dueDate: string = "2004-06-10";
     export let fullname: string = "Rapid Reserve"
     export let contact: string = '';
-    export let items: Array<any> = [];
+    export let items: any = null;
     export let duration: number = 0;
     export let roomPrice: number = 0;
     export let bedType: string = 'King';
     export let totalAmount: number = 0;
 </script>
 
-<div class="fixed w-full h-full bg-everforest-black/80 top-0 left-0 z-10">
+<div class="fixed w-full h-full bg-everforest-black/80 top-0 left-0 z-50">
     <div use:clickoutside on:clickoutside={() => showDetail = false} class="bg-everforest-white w-[800px] h-auto m-auto p-4 rounded-lg mt-[10%]">
         <h1 class="text-3xl text-center font-bold bg-everforest-black text-everforest-white p-4">INVOICE</h1>
         <div class="flex flex-col float-left">
@@ -60,13 +60,14 @@
                 <td class="p-2">{duration}</td>
                 <td class="p-2">IDR {roomPrice * duration}</td>
             </tr>
-            {#each items as item}
-                {@const price = item === "breakfast" ? 300000 : item === "spa" ? 600000 : 200000}
+            {#each items.items as item, i}
+                {@const price = items.price[i]}
+                {@const amount = items.amount[i]}
                 <tr class="border-b border-everforest-black">
                     <td class="p-2">{item.toUpperCase()} SERVICE</td>
                     <td class="p-2">IDR {price}</td>
-                    <td class="p-2">-</td>
-                    <td class="p-2">IDR {price}</td>
+                    <td class="p-2">{amount}</td>
+                    <td class="p-2">IDR {price * amount}</td>
                 </tr>
             {/each}
             <tr>

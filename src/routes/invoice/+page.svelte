@@ -30,9 +30,9 @@
         return JSON.parse(guest);
     }
 
-    const getInvoiceInformation = async (id: number) => {
+    const getInvoiceInformation = async (guestId: number) => {
 
-        let invoice: string = await invoke('get_invoice_information', { id });
+        let invoice: string = await invoke('get_invoice_information', { guestId });
         
         return JSON.parse(invoice);
     }
@@ -66,8 +66,9 @@
             totalAmount: 0
         };
 
-        let invoice = await getInvoiceInformation(id);
-        let guest = await getGuestInformation(invoice[0].guestId);
+        let guestId: number = await invoke('get_guest_id_from_invoice', { id });
+        let invoice = await getInvoiceInformation(guestId);
+        let guest = await getGuestInformation(guestId);
 
         obj.fullname = guest[0].fullName;
         obj.contact = guest[0].contactInfo;
@@ -88,7 +89,7 @@
     }
 
     onMount(() => {
-        getAllInvoices().then(() => console.log(invoiceList));
+        getAllInvoices();
     });
 </script>
 

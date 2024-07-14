@@ -79,17 +79,17 @@ pub async fn set_invoice_payment_status(guest_id: i32, status: bool)
 }
 
 #[tauri::command]
-pub async fn get_invoice_information(id: i32) -> String
+pub async fn get_invoice_information(guest_id: i32) -> String
 {
     let conn = get_connection().unwrap();
 
     let mut stmt = conn.prepare("
         SELECT id, guest_id, items_json, amount_to_pay, date, due_date, has_paid 
         FROM invoice
-        WHERE id = ?1"
+        WHERE guest_id = ?1"
     ).unwrap();
 
-    let invoices = stmt.query_map([id], |row| {
+    let invoices = stmt.query_map([guest_id], |row| {
         Ok(Invoice::new(
             row.get(0)?,
             row.get(1)?,
@@ -109,4 +109,27 @@ pub async fn get_invoice_information(id: i32) -> String
     }
 
     serde_json::to_string_pretty(&vec).unwrap()
+}
+
+#[tauri::command]
+pub async fn set_additional_items(guest_id: i32, items_json: String, amount_to_pay: i32)
+{
+    let conn = get_connection().unwrap();
+
+    conn.execute(
+        "UPDATE invoice SET items_json = ?2, amount_to_pay = ?3 WHERE guest_id = ?1",
+        params![guest_id, items_json, amount_to_pay]
+    ).unwrap();
+}
+
+#[tauri::command]
+pub async fn get_guest_id_from_invoice(id: i32) -> i32
+{
+    let conn = get_connection().unwrap();
+
+    conn.query_row(
+        "SELECT guest_id FROM invoice WHERE id = ?1",
+        [id],
+        |row| row.get(0)
+    ).unwrap()
 }

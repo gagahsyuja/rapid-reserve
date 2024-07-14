@@ -6,7 +6,6 @@
     import CloseButton from '$lib/component/CloseButton.svelte';
     import Success from '../Success.svelte';
     import { invoke } from '@tauri-apps/api/tauri';
-    import { onMount } from 'svelte';
 
     export let showCheckIn: boolean = false;
 
@@ -51,10 +50,6 @@
                     });
             });
     }
-
-    onMount(() => {
-        getAllGuests().then(() => console.log(guests));
-    })
 </script>
 
 {#await getAllGuests() then}

@@ -21,7 +21,7 @@
     let roomPrice: number = 0;
 
     let showDetail: boolean = false;
-    let invoiceId: number = 0;
+    let guestId: number = 0;
 
     let currentDate = new Date().toJSON().slice(0, 10);
 
@@ -105,9 +105,34 @@
 
     const addInvoice = async (id: number): Promise<number> => {
 
+        let arrPrice: Array<number> = [];
+        let arrAmount: Array<number> = [];
+
+        let obj = {
+            items: addOn,
+            price: [0],
+            amount: [0]
+        };
+
+        for (let i of addOn.keys()) {
+            if (addOn[i] === "breakfast") {
+                arrPrice.push(300000);
+                arrAmount.push(1);
+            } else if (addOn[i] === "spa") {
+                arrPrice.push(600000);
+                arrAmount.push(1);
+            } else if (addOn[i] === "gym") {
+                arrPrice.push(200000);
+                arrAmount.push(1);
+            }
+        }
+
+        obj.price = arrPrice;
+        obj.amount = arrAmount;
+
         let lastId: number = await invoke('add_invoice', {
             guestId: id,
-            itemsJson: JSON.stringify(addOn),
+            itemsJson: JSON.stringify(obj),
             amountToPay: getTotalAmount(),
             date: currentDate,
             dueDate: checkInDate,
@@ -151,16 +176,15 @@
 
     const book = async () => {
 
-        addGuest().then(guestId => {
+        addGuest().then(lastGuestId => {
+            guestId = lastGuestId;
             invoke('set_room_occupied', {
                 roomId: parseInt(roomId),
                 occupied: true
             }).then(() => {
                 addInvoice(guestId).then(lastInvoiceId => {
                     addReport(guestId, lastInvoiceId).then(() => {
-                        invoiceId = lastInvoiceId;
                         showDetail = true;
-                        // resetVariable();
                     })
                 })
             })
@@ -173,40 +197,26 @@
         
         getAllRooms().then(() => {
             roomId = roomsAvailable.length ? roomsAvailable[0].number : '';
-            getRoomPrice(parseInt(roomId)).then(price => console.log(price));
+            getRoomPrice(parseInt(roomId));
         });
     }
 
-    const getInvoiceDetail = async () => {
+    const getRoomBedType = async (id: number) => {
 
-        let obj = {
-            fullname: '',
-            contact: '',
-            date: '',
-            dueDate: '',
-            items: [''],
-            bedType: '',
-            roomPrice: 0,
-            duration: 0,
-            totalAmount: 0
-        };
+        let type: string = await invoke('get_room_bed_type', { roomId: id });
 
-        obj.fullname = fullname;
-        obj.contact = contactInfo;
-        obj.date = currentDate;
-        obj.dueDate = getCheckoutDate(checkInDate, duration);
-        obj.items = addOn;
-        obj.bedType = await invoke('get_room_bed_type', { roomId });
-        obj.roomPrice = roomPrice;
-        obj.duration = duration;
-        obj.totalAmount = getTotalAmount();
+        return type;
+    }
 
-        return obj;
+    const getInvoiceDetail = async (guestId: number) => {
+
+        let invoice: string = await invoke('get_invoice_information', { guestId });
+
+        return JSON.parse(invoice);
     }
 
     onMount(() => {
         getRoom();
-        console.log(currentDate);
     })
 </script>
 
@@ -296,20 +306,23 @@
         </Modal>
     </div>
     {#if showDetail}
-        {#await getInvoiceDetail() then invoiceDetail}
-            <Invoice
-                id={invoiceId}
-                date={invoiceDetail.date}
-                dueDate={invoiceDetail.date}
-                fullname={invoiceDetail.fullname}
-                contact={invoiceDetail.contact}
-                items={invoiceDetail.items}
-                duration={invoiceDetail.duration}
-                roomPrice={invoiceDetail.roomPrice}
-                bedType={invoiceDetail.bedType}
-                totalAmount={invoiceDetail.totalAmount}
-                bind:showDetail
-            />
+        {#await getInvoiceDetail(guestId) then invoiceDetail}
+            {@const items = JSON.parse(invoiceDetail[0].itemsJson)}
+            {#await getRoomBedType(parseInt(roomId)) then bedType}
+                <Invoice
+                    id={invoiceDetail[0].id}
+                    date={invoiceDetail[0].date}
+                    dueDate={invoiceDetail[0].dueDate}
+                    fullname={fullname}
+                    contact={contactInfo}
+                    items={items}
+                    duration={duration}
+                    roomPrice={roomPrice}
+                    bedType={bedType}
+                    totalAmount={getTotalAmount()}
+                    bind:showDetail
+                />
+            {/await}
         {/await}
     {/if}
 </div>

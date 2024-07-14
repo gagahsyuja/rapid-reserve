@@ -21,8 +21,8 @@
         return JSON.parse(guest);
     }
 
-    onMount(async () => {
-        getAllReports().then(() => console.log(reportList));
+    onMount(() => {
+        getAllReports();
     })
 </script>
 
@@ -54,11 +54,11 @@
                             <div class="flex flex-row">
                                 <div class="flex flex-col items-center p-4">
                                     <span>Check In Date | Actual</span>
-                                    <span class="font-bold">{checkInDate} | {actualCheckInDate ? actualCheckInDate : 'not yet'}</span>
+                                    <span class="font-bold">{checkInDate} | {actualCheckInDate ? actualCheckInDate : '-'}</span>
                                 </div>
                                 <div class="flex flex-col items-center p-4">
                                     <span>Check Out Date | Actual</span>
-                                    <span class="font-bold">{checkOutDate} | {actualCheckOutDate ? actualCheckOutDate : 'not yet'}</span>
+                                    <span class="font-bold">{checkOutDate} | {actualCheckOutDate ? actualCheckOutDate : '-'}</span>
                                 </div>
                             </div>
                         </div>
