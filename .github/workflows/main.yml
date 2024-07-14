@@ -51,15 +51,15 @@ jobs:
       - name: install frontend dependencies
         run: bun install # change this to npm, pnpm or bun depending on which one you use.
 
-      - uses: tauri-apps/tauri-action@v0.5.9
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
+          releaseId: 'rapid-reserve'
           releaseName: 'App v__VERSION__'
           releaseBody: 'See the assets to download this version and install.'
-          tauriScript: 'bun run'
-          releaseId: 'rapid-reserve-__VERSION__'
+          tauriScript: 'bun run'          
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
