@@ -26,6 +26,7 @@
     let idToEdit: any = null;
     let searchKeyword: string = '';
     let filteredGuestsList: Array<any> = [];
+    let isCheckedOut: boolean = false;
 
     $: searchKeyword, filteredGuestsList = guestsList.filter(guest => guest.fullName.toLowerCase().includes(searchKeyword.toLowerCase()) || guest.nik.includes(searchKeyword.toLowerCase()));
 
@@ -33,7 +34,9 @@
 
         let guests: string = await invoke('get_all_guests');
 
-        guestsList = filteredGuestsList = JSON.parse(guests);
+        let arr: Array<any> = JSON.parse(guests);
+
+        guestsList = filteredGuestsList = arr.filter(guest => !guest.isCheckedOut);
     }
 
     const resetVariable = () => {
@@ -45,6 +48,7 @@
         checkOutDate = '';
         contactInfo = '';
         paymentStatus = false;
+        isCheckedOut = false;
     }
 
     const addGuest = async () => {
@@ -55,7 +59,8 @@
             checkInDate,
             checkOutDate,
             contactInfo,
-            paymentStatus
+            paymentStatus,
+            isCheckedOut
         }).then(() => {
             showAddButton = false;
             resetVariable();
@@ -163,16 +168,16 @@
                 <div class="flex flex-col items-center w-full text-everforest-black rounded-xl bg-{paymentColorBg} p-4">
                     <div class="flex flex-col items-center">
                         <span>Room {guest.roomId}</span>
-                        <span class="text-xl">{guest.fullName}</span>
+                        <span class="text-xl font-bold">{guest.fullName}</span>
                     </div>
                     <span>{guest.contactInfo}</span>
                     <div class="flex flex-row">
                         <div class="flex flex-col items-center p-4">
-                            <span>Check In Date</span>
+                            <span class="font-bold">Check In Date</span>
                             <span>{guest.checkInDate}</span>
                         </div>
                         <div class="flex flex-col items-center p-4">
-                            <span>Check Out Date</span>
+                            <span class="font-bold">Check Out Date</span>
                             <span>{guest.checkOutDate}</span>
                         </div>
                     </div>
@@ -190,7 +195,7 @@
                 </div>
             {/each}
         {:else}
-            <span>Guest is empty</span>
+            <h1 class="text-left font-bold text-lg">Guest is empty</h1>
         {/if}
     </div>
 

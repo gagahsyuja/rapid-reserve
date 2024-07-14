@@ -1,11 +1,12 @@
 <script lang="ts">
     import Title from '$lib/component/Title.svelte';
     import Button from '$lib/component/Button.svelte';
-    import Popup from '$lib/component/PopupModal.svelte';
     import Modal from '$lib/component/PopupModal.svelte';
+    import Confirm from '../ConfirmationModal.svelte';
     import CloseButton from '$lib/component/CloseButton.svelte';
     import { invoke } from '@tauri-apps/api/tauri';
     import { onMount } from 'svelte';
+    import Invoice from '../Invoice.svelte';
 
     export let showBooking: boolean = false;
 
@@ -19,8 +20,10 @@
     let roomsAvailable: Array<any> = [];
     let roomPrice: number = 0;
 
-    let showPopup: boolean = false;
-    let popupMessage: string = '';
+    let showDetail: boolean = false;
+    let invoiceId: number = 0;
+
+    let currentDate = new Date().toJSON().slice(0, 10);
 
     const resetVariable = () => {
         fullname = '';
@@ -30,7 +33,10 @@
         contactInfo = '';
         roomId = '';
         addOn = [];
+        roomPrice = 0;
     }
+
+    $: if (!showDetail) { resetVariable() };
 
     const getAllRooms = async () => {
 
@@ -92,7 +98,7 @@
             }
         }
 
-        amount += roomPrice;
+        amount += (roomPrice * duration);
 
         return amount;
     }
@@ -103,8 +109,8 @@
             guestId: id,
             itemsJson: JSON.stringify(addOn),
             amountToPay: getTotalAmount(),
-            date: checkInDate,
-            dueDate: getCheckoutDate(checkInDate, duration),
+            date: currentDate,
+            dueDate: checkInDate,
             hasPaid: false
         });
 
@@ -118,7 +124,9 @@
             invoiceId,
             roomId: parseInt(roomId),
             checkInDate,
-            checkOutDate: getCheckoutDate(checkInDate, duration)
+            actualCheckInDate: null,
+            checkOutDate: getCheckoutDate(checkInDate, duration),
+            actualCheckOutDate: null
         });
 
         return id;
@@ -132,8 +140,10 @@
             fullName: fullname,
             checkInDate,
             checkOutDate: getCheckoutDate(checkInDate, duration),
+            duration,
             contactInfo,
-            paymentStatus: false
+            paymentStatus: false,
+            isCheckedOut: false
         });
 
         return id;
@@ -146,27 +156,57 @@
                 roomId: parseInt(roomId),
                 occupied: true
             }).then(() => {
-                addInvoice(guestId).then(invoiceId => {
-                    addReport(guestId, invoiceId).then(() => {
-                        showPopup = true;
-                        popupMessage = "Booking successful";
-                        resetVariable();
-                        getAllRooms();
+                addInvoice(guestId).then(lastInvoiceId => {
+                    addReport(guestId, lastInvoiceId).then(() => {
+                        invoiceId = lastInvoiceId;
+                        showDetail = true;
+                        // resetVariable();
                     })
                 })
-            });
-        }).catch(e => {
-            showPopup = true;
-            popupMessage = "Booking failed: " + e;
+            })
+        }).catch(() => {
             resetVariable();
         })
     }
 
-    onMount(() => {
+    const getRoom = () => {
+        
         getAllRooms().then(() => {
             roomId = roomsAvailable.length ? roomsAvailable[0].number : '';
             getRoomPrice(parseInt(roomId)).then(price => console.log(price));
         });
+    }
+
+    const getInvoiceDetail = async () => {
+
+        let obj = {
+            fullname: '',
+            contact: '',
+            date: '',
+            dueDate: '',
+            items: [''],
+            bedType: '',
+            roomPrice: 0,
+            duration: 0,
+            totalAmount: 0
+        };
+
+        obj.fullname = fullname;
+        obj.contact = contactInfo;
+        obj.date = currentDate;
+        obj.dueDate = getCheckoutDate(checkInDate, duration);
+        obj.items = addOn;
+        obj.bedType = await invoke('get_room_bed_type', { roomId });
+        obj.roomPrice = roomPrice;
+        obj.duration = duration;
+        obj.totalAmount = getTotalAmount();
+
+        return obj;
+    }
+
+    onMount(() => {
+        getRoom();
+        console.log(currentDate);
     })
 </script>
 
@@ -178,37 +218,41 @@
             <form method="POST" on:submit|preventDefault={book} class="flex flex-col p-2">
                 <span>Full name</span>
                 <input
-                    class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+                    class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none"
                     type="text"
                     bind:value={fullname}
-                    placeholder="Ex. Gagah Syuja"
+                    placeholder="E.g. Gagah Syuja"
                     required
                 />
-                <span>NIK</span>
+                <span class="pt-3">NIK</span>
                 <input
-                    class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+                    class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none"
                     type="text"
                     bind:value={nik}
                     placeholder="NIK"
                     required
                 />
-                <span>Select room</span>
+                <span class="pt-3">Select room</span>
                 {#await getAllRooms() then}
                     <select
                         bind:value={roomId}
-                        class="m-2 p-2 bg-everforest-black text-everforest-green border-4 border-everforest-green flex flex-row rounded-md color-everforest-green outline-none appearance-none focus:bg-everforet-black"
+                        class="m-2 p-2 bg-everforest-black text-everforest-green border-4 border-everforest-green flex flex-row rounded-md color-everforest-green outline-none appearance-none focus:bg-everforet-black focus:outline-none"
                         required
                     >
-                        {#each roomsAvailable as room}
-                            {@const roomId = room.id}
-                            {@const roomNumber = room.number}
-                            {@const roomBedType = room.bedType}
-                            <option class="p-4" value={roomId}>{roomNumber} - {roomBedType}</option>
-                        {/each}
+                        {#if roomsAvailable}
+                            {#each roomsAvailable as room}
+                                {@const roomId = room.id}
+                                {@const roomNumber = room.number}
+                                {@const roomBedType = room.bedType}
+                                <option class="p-4" value={roomId}>{roomNumber} - {roomBedType}</option>
+                            {/each}
+                        {:else}
+                            <option disabled class="p-4" value={null}>No rooms available</option>
+                        {/if}
                     </select>
                 {/await}
-                <span>Add-On</span>
-                <div class="flex flex-row items-center justify-center align-center m-4 p-2">
+                <span class="pt-3">Add-On</span>
+                <div class="flex flex-row items-center justify-center align-center m-2 pt-2">
                     <label class="container">Breakfast
                         <input type="checkbox" bind:group={addOn} value="breakfast" />
                         <span class="checkmark rounded-md bg-everforest-black border-2 border-everforest-green"></span>
@@ -222,28 +266,28 @@
                         <span class="checkmark rounded-md bg-everforest-black border-2 border-everforest-green"></span>
                     </label>
                 </div>
-                <span>Check in Date</span>
+                <span class="pt-3">Check in Date</span>
                 <input
                     class="m-2 bg-[#3A464C] text-white border-4 border-everforest-green rounded-md p-2"
                     type="date"
                     bind:value={checkInDate}
                     required
                 />
-                <span>Duration</span>
+                <span class="pt-3">Duration</span>
                 <input
-                    class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+                    class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none"
                     type="number"
                     min="1"
                     bind:value={duration}
                     placeholder="Room number"
                     required
                 />
-                <span>Contact info</span>
+                <span class="pt-3">Contact info</span>
                 <input
-                    class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+                    class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none"
                     type="text"
                     bind:value={contactInfo}
-                    placeholder="Contact info"
+                    placeholder="E.g. xxxx-xxxx-xxxx"
                     required
                 />
                 <br />
@@ -251,13 +295,22 @@
             </form>
         </Modal>
     </div>
-    {#if showPopup}
-        <Popup>
-            <div class="flex flex-col">
-                <span>Booking successful</span>
-                <Button on:click={() => showPopup = false} name="Thank you" fg="everforest-black" bg="everforest-green" />
-            </div>
-        </Popup>
+    {#if showDetail}
+        {#await getInvoiceDetail() then invoiceDetail}
+            <Invoice
+                id={invoiceId}
+                date={invoiceDetail.date}
+                dueDate={invoiceDetail.date}
+                fullname={invoiceDetail.fullname}
+                contact={invoiceDetail.contact}
+                items={invoiceDetail.items}
+                duration={invoiceDetail.duration}
+                roomPrice={invoiceDetail.roomPrice}
+                bedType={invoiceDetail.bedType}
+                totalAmount={invoiceDetail.totalAmount}
+                bind:showDetail
+            />
+        {/await}
     {/if}
 </div>
 
@@ -267,9 +320,9 @@
   display: block;
   position: relative;
   padding-left: 35px;
-  margin-bottom: 12px;
+  margin: auto;
   cursor: pointer;
-  font-size: 22px;
+  font-size: 18px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;

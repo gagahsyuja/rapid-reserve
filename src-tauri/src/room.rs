@@ -132,3 +132,15 @@ pub async fn get_room_price(room_id: i32) -> i32
         |row| row.get(0)
     ).unwrap()
 }
+
+#[tauri::command]
+pub async fn get_room_bed_type(room_id: i32) -> String
+{
+    let conn = get_connection().unwrap();
+
+    conn.query_row(
+        "SELECT bed_type FROM room WHERE id = ?1",
+        [room_id],
+        |row| row.get(0)
+    ).unwrap()
+}

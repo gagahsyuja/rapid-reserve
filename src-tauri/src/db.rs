@@ -44,8 +44,10 @@ pub fn setup(conn: Connection) -> Result<()>
              full_name      TEXT,
              checkin_date   DATE,
              checkout_date  DATE,
+             duration       INTEGER,
              contact_info   TEXT,
-             payment_status INTEGER
+             payment_status INTEGER,
+             is_checked_out INTEGER
          );
          CREATE TABLE IF NOT EXISTS invoice (
              id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,12 +60,14 @@ pub fn setup(conn: Connection) -> Result<()>
              FOREIGN KEY(guest_id) REFERENCES guest(id) ON DELETE NO ACTION
          );
          CREATE TABLE IF NOT EXISTS report (
-             id             INTEGER PRIMARY KEY AUTOINCREMENT,
-             guest_id       INTEGER,
-             invoice_id     INTEGER,
-             room_id        INTEGER,
-             checkin_date   DATE,
-             checkout_date  DATE,
+             id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+             guest_id               INTEGER,
+             invoice_id             INTEGER,
+             room_id                INTEGER,
+             checkin_date           DATE,
+             actual_checkin_date    DATE,
+             checkout_date          DATE,
+             actual_checkout_date   DATE,
              FOREIGN KEY(guest_id) REFERENCES guest(id),
              FOREIGN KEY(invoice_id) REFERENCES invoice(id),
              FOREIGN KEY(room_id) REFERENCES invoice(id)

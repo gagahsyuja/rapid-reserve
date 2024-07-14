@@ -145,10 +145,10 @@
             {#each filteredRoomsList as room}
                 {@const bgColor = !room.occupied ? "everforest-green" : "everforest-red"}
                 <div class="flex flex-col items-center w-full text-everforest-black rounded-xl bg-{bgColor} p-4">
-                    <span>Room {room.number}</span>
+                    <span class="font-bold">Room {room.number}</span>
                     <span>{room.bedType}</span>
-                    <span>{room.price}</span>
-                    <div class="flex flex-row justify-around w-full px-8">
+                    <span>IDR {room.price}</span>
+                    <div class="flex flex-row justify-around w-full px-8 mt-4">
                         <button on:click={() => showEdit(room.id)} class="border-2 border-everforest-black rounded-md w-[80px] h-[30px]">
                             Edit
                         </button>
@@ -162,7 +162,7 @@
                 </div>
             {/each}
         {:else}
-            No room listed
+            <h1 class="text-left font-bold text-lg">No room listed</h1>
         {/if}
     </div>
 

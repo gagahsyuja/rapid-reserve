@@ -21,7 +21,7 @@
     />
     <span>Bed Type</span>
     <select
-        class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+        class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 appearance-none focus:outline-none"
         bind:value={bedType}
         required
     >
@@ -32,7 +32,7 @@
     </select>
     <span>Price</span>
     <input
-        class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+        class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none"
         type="text"
         bind:value={price}
         placeholder="Room's price"

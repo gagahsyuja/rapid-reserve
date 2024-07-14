@@ -21,7 +21,7 @@
     />
     <span>NIK</span>
     <input
-        class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+        class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none"
         type="text"
         bind:value={nik}
         placeholder="Guest's NIK"
@@ -31,7 +31,7 @@
         <div class="flex flex-col items-center">
             <span>Room Number</span>
             <input
-                class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+                class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none"
                 type="text"
                 inputmode="numeric"
                 maxlength="5"
@@ -43,7 +43,7 @@
         <div class="flex flex-col items-center">
             <span>Check In</span>
             <input
-                class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+                class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none text-everforest-white"
                 type="date"
                 bind:value={checkInDate}
                 placeholder="Check-in Date"
@@ -53,7 +53,7 @@
         <div class="flex flex-col items-center">
             <span>Check Out</span>
             <input
-                class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+                class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none text-everforest-white"
                 type="date"
                 bind:value={checkOutDate}
                 placeholder="Check-out Date"
@@ -63,7 +63,7 @@
     </div>
     <span>Contact Info</span>
     <input
-        class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2"
+        class="m-2 bg-[#3A464C] border-4 border-everforest-green rounded-md p-2 focus:outline-none"
         type="tel"
         bind:value={contactInfo}
         placeholder="Guest's contact info"

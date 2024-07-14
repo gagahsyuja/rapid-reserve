@@ -77,3 +77,36 @@ pub async fn set_invoice_payment_status(guest_id: i32, status: bool)
 
     stmt.execute(params![guest_id, status]).unwrap();
 }
+
+#[tauri::command]
+pub async fn get_invoice_information(id: i32) -> String
+{
+    let conn = get_connection().unwrap();
+
+    let mut stmt = conn.prepare("
+        SELECT id, guest_id, items_json, amount_to_pay, date, due_date, has_paid 
+        FROM invoice
+        WHERE id = ?1"
+    ).unwrap();
+
+    let invoices = stmt.query_map([id], |row| {
+        Ok(Invoice::new(
+            row.get(0)?,
+            row.get(1)?,
+            row.get(2)?,
+            row.get(3)?,
+            row.get(4)?,
+            row.get(5)?,
+            row.get(6)?
+        ))
+    }).unwrap();
+
+    let mut vec: Vec<Invoice> = Vec::new();
+
+    for invoice in invoices
+    {
+        vec.push(invoice.unwrap());
+    }
+
+    serde_json::to_string_pretty(&vec).unwrap()
+}

@@ -12,28 +12,30 @@ pub struct Guest
     full_name: String,
     check_in_date: String,
     check_out_date: String,
+    duration: i32,
     contact_info: String,
-    payment_status: bool
+    payment_status: bool,
+    is_checked_out: bool
 }
 
 impl Guest
 {
-    pub fn new(id: i32, nik: String, room_id: i32, full_name: String, check_in_date: String, check_out_date: String, contact_info: String, payment_status: bool) -> Self
+    pub fn new(id: i32, nik: String, room_id: i32, full_name: String, check_in_date: String, check_out_date: String, duration: i32, contact_info: String, payment_status: bool, is_checked_out: bool) -> Self
     {
-        Self { id, nik, room_id, full_name, check_in_date, check_out_date, contact_info, payment_status }
+        Self { id, nik, room_id, full_name, check_in_date, check_out_date, duration, contact_info, payment_status, is_checked_out }
     }
 }
 
 #[tauri::command]
-pub async fn add_guest(nik: String, room_id: i32, full_name: String, check_in_date: String, check_out_date: String, contact_info: String, payment_status: bool) -> i32
+pub async fn add_guest(nik: String, room_id: i32, full_name: String, check_in_date: String, check_out_date: String, duration: i32, contact_info: String, payment_status: bool, is_checked_out: bool) -> i32
 {
     let conn = get_connection().unwrap();
 
-    let guest = Guest::new(0, nik, room_id, full_name, check_in_date, check_out_date, contact_info, payment_status);
+    let guest = Guest::new(0, nik, room_id, full_name, check_in_date, check_out_date, duration, contact_info, payment_status, is_checked_out);
 
     conn.execute("INSERT INTO guest
-        (nik, room_id, full_name, checkin_date, checkout_date, contact_info, payment_status) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        (&guest.nik, &guest.room_id, &guest.full_name, &guest.check_in_date, &guest.check_out_date, &guest.contact_info, &guest.payment_status)
+        (nik, room_id, full_name, checkin_date, checkout_date, duration, contact_info, payment_status, is_checked_out) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        (&guest.nik, &guest.room_id, &guest.full_name, &guest.check_in_date, &guest.check_out_date, &guest.duration, &guest.contact_info, &guest.payment_status, &guest.is_checked_out)
     ).unwrap();
 
     conn.query_row("SELECT last_insert_rowid()", [], |row| row.get(0)).unwrap()
@@ -44,7 +46,7 @@ pub async fn get_all_guests() -> String
 {
     let conn = get_connection().unwrap();
 
-    let mut stmt = conn.prepare("SELECT id, nik, room_id, full_name, checkin_date, checkout_date, contact_info, payment_status FROM guest").unwrap();
+    let mut stmt = conn.prepare("SELECT id, nik, room_id, full_name, checkin_date, checkout_date, duration, contact_info, payment_status, is_checked_out FROM guest").unwrap();
 
     let guests = stmt.query_map([], |row| {
         Ok(Guest::new(
@@ -56,6 +58,8 @@ pub async fn get_all_guests() -> String
             row.get(5)?,
             row.get(6)?,
             row.get(7)?,
+            row.get(8)?,
+            row.get(9)?
         ))
     }).unwrap();
 
@@ -82,7 +86,7 @@ pub async fn get_guest_information(guest_id: i32) -> String
 {
     let conn = get_connection().unwrap();
 
-    let mut stmt = conn.prepare("SELECT id, nik, room_id, full_name, checkin_date, checkout_date, contact_info, payment_status FROM guest WHERE id = ?1").unwrap();
+    let mut stmt = conn.prepare("SELECT id, nik, room_id, full_name, checkin_date, checkout_date, duration, contact_info, payment_status, is_checked_out FROM guest WHERE id = ?1").unwrap();
 
 
     let guests = stmt.query_map([guest_id], |row| {
@@ -95,6 +99,8 @@ pub async fn get_guest_information(guest_id: i32) -> String
             row.get(5)?,
             row.get(6)?,
             row.get(7)?,
+            row.get(8)?,
+            row.get(9)?
         ))
     }).unwrap();
 
@@ -130,6 +136,20 @@ pub async fn set_payment_status(guest_id: i32, status: bool)
     let mut stmt = conn.prepare(
         "UPDATE guest SET
          payment_status = ?2
+         WHERE id = ?1"
+    ).unwrap();
+
+    stmt.execute(params![guest_id, status]).unwrap();
+}
+
+#[tauri::command]
+pub async fn set_check_out_status(guest_id: i32, status: bool)
+{
+    let conn = get_connection().unwrap();
+
+    let mut stmt = conn.prepare(
+        "UPDATE guest SET
+         is_checked_out = ?2
          WHERE id = ?1"
     ).unwrap();
 

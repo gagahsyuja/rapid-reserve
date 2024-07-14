@@ -3,6 +3,7 @@
     import Popup from '$lib/component/PopupModal.svelte';
     import Modal from '$lib/component/PopupModal.svelte';
     import CloseButton from '$lib/component/CloseButton.svelte';
+    import Success from '$lib/component/Success.svelte';
     import { invoke } from '@tauri-apps/api/tauri';
     import { onMount } from 'svelte';
 
@@ -15,6 +16,8 @@
 
     let showPopup: boolean = false;
 
+    let currentDate = new Date().toJSON().slice(0, 10);
+
     $: searchKeyword, filteredGuests = guests.filter(guest => guest.fullName.toLowerCase().includes(searchKeyword.toLowerCase()) || guest.nik.includes(searchKeyword.toLowerCase()));
     
     const getAllGuests = async () => {
@@ -23,7 +26,7 @@
 
         let arr: Array<any> = JSON.parse(json);
 
-        guests = filteredGuests = arr.filter(guest => guest.paymentStatus);
+        guests = filteredGuests = arr.filter(guest => guest.paymentStatus && !guest.isCheckedOut);
     }
 
     const getGuestInformation = async (id: number) => {
@@ -33,17 +36,19 @@
         return JSON.parse(guest);
     }
 
-    const removeGuest = async (id: number) => {
-        await invoke('remove_guest', { guestId: id });
+    const checkOutGuest = async (id: number, status: boolean) => {
+        await invoke('set_check_out_status', { guestId: id, status });
     }
 
     const checkout = async (id: number) => {
 
         getGuestInformation(id).then(guest => {
             invoke('set_room_occupied', { roomId: guest[0].roomId, occupied: false }).then(() => {
-                removeGuest(id).then(() => {
-                    getAllGuests();
-                    showPopup = true;
+                checkOutGuest(id, true).then(() => {
+                    invoke('set_report_actual_check_out_date', { guestId: id, date: currentDate }).then(() => {
+                        getAllGuests();
+                        showPopup = true;
+                    })
                 })
             });
         });
@@ -70,38 +75,29 @@
                 {#if guests.length}
                     {#each filteredGuests as guest}
                         <button
-                            class="flex flex-row items-center justify-center w-full text-everforest-black rounded-xl bg-everforest-green hover:bg-everforest-red h-[100px] mb-4"
+                            class="flex flex-row items-center justify-evenly w-full text-everforest-black rounded-xl bg-everforest-green hover:bg-everforest-red h-[100px] mb-4"
                             on:click={() => checkout(guest.id)}
                         >
                             <div class="flex flex-col items-center">
                                 <span>Room {guest.roomId}</span>
-                                <span class="text-xl">{guest.fullName}</span>
+                                <span class="text-xl font-bold">{guest.fullName}</span>
                             </div>
                             <div class="flex flex-row">
                                 <div class="flex flex-col items-center p-4">
-                                    <span>Check In Date</span>
-                                    <span>{guest.checkInDate}</span>
-                                </div>
-                                <div class="flex flex-col items-center p-4">
-                                    <span>Check Out Date</span>
-                                    <span>{guest.checkOutDate}</span>
+                                    <span>Due Date</span>
+                                    <span class="font-bold">{guest.checkOutDate}</span>
                                 </div>
                             </div>
                         </button>
                     {/each}
                 {:else}
-                    <span>Guest is empty</span>
+                    <h1 class="text-center font-bold text-xl">No guest to be checked out</h1>
                 {/if}
             </div>
         </div>
     </Modal>
 
     {#if showPopup}
-        <Popup>
-            <div class="flex flex-col">
-                <span>Check out successful</span>
-                <Button on:click={() => showPopup = false} name="Thank you" fg="everforest-black" bg="everforest-green" />
-            </div>
-        </Popup>
+        <Success message="Check out successful" on:click={() => showPopup = false} />
     {/if}
 {/await}

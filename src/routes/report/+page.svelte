@@ -1,8 +1,8 @@
 <script lang="ts">
+    import Title from '$lib/component/Title.svelte';
+    import Home from '$lib/component/Home.svelte';
     import { invoke } from '@tauri-apps/api/tauri';
     import { onMount } from "svelte";
-
-    let searchKeyword: string = '';
 
     let reportList: Array<any> = [];
     let filteredReport: Array<any> = [];
@@ -26,46 +26,46 @@
     })
 </script>
 
-<div class="p-8">
+<Home />
+<Title title="Report" />
+<div class="w-[60%] m-auto">
     <div class="flex flex-col justify-center">
-        <input
-            class="bg-everforest-black border-4 border-everforest-green shadow-md focus:outline-none w-[80%] h-[50px] text-everforest-white placeholder:text-everforest-white p-4 rounded-3xl mt-8 mb-6 self-center"
-            type="text"
-            placeholder="Search name..."
-            bind:value={searchKeyword}
-        />
-
         <div class="h-[700px] overflow-scroll">
             {#if reportList.length}
                 {#each filteredReport as report}
                     {#await getGuestInformation(report.guestId) then guest}
                         {@const guestName = guest[0].fullName}
                         {@const checkInDate = report.checkInDate}
+                        {@const actualCheckInDate = report.actualCheckInDate}
                         {@const checkOutDate = report.checkOutDate}
-                        {@const color = 'everforest-green'}
+                        {@const actualCheckOutDate = report.actualCheckOutDate}
 
-                        <button
-                            class="flex flex-row items-center justify-center w-full text-everforest-black rounded-xl bg-{color} hover:bg-everforest-red h-[100px] mb-4"
+                        <div
+                            class="flex flex-row items-center justify-evenly w-full text-everforest-black rounded-xl bg-everforest-purple h-[100px] mb-4"
                         >
-                            <div class="flex flex-col items-center">
-                                <span>Guest</span>
-                                <span class="text-xl">{guestName}</span>
+                            <div class="flex flex-col min-w-[50px]">
+                                <span class="text-left">Room</span>
+                                <span class="text-xl font-bold text-left">{guest[0].roomId}</span>
+                            </div>
+                            <div class="flex flex-col min-w-[200px]">
+                                <span class="text-left">Guest</span>
+                                <span class="text-xl font-bold text-left">{guestName}</span>
                             </div>
                             <div class="flex flex-row">
                                 <div class="flex flex-col items-center p-4">
-                                    <span>Check In date</span>
-                                    <span>{checkInDate}</span>
+                                    <span>Check In Date | Actual</span>
+                                    <span class="font-bold">{checkInDate} | {actualCheckInDate ? actualCheckInDate : 'not yet'}</span>
                                 </div>
                                 <div class="flex flex-col items-center p-4">
-                                    <span>Check Out Date</span>
-                                    <span>{checkOutDate}</span>
+                                    <span>Check Out Date | Actual</span>
+                                    <span class="font-bold">{checkOutDate} | {actualCheckOutDate ? actualCheckOutDate : 'not yet'}</span>
                                 </div>
                             </div>
-                        </button>
+                        </div>
                     {/await}
                 {/each}
             {:else}
-                <span>Guest is empty</span>
+                <h1 class="text-center font-bold text-xl">Report is empty</h1>
             {/if}
         </div>
     </div>
