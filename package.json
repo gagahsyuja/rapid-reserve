@@ -1,6 +1,6 @@
 {
   "name": "rapid-reserve",
-  "version": "0.9.0",
+  "version": "0.1.0",
   "devDependencies": {
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@svelte-put/clickoutside": "^3.0.2",
