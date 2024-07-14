@@ -5,7 +5,6 @@
     import CheckIn from '$lib/component/page/CheckIn.svelte';
     import CheckOut from '$lib/component/page/CheckOut.svelte';
     import { invoke } from '@tauri-apps/api/tauri';
-    import { pushState } from '$app/navigation';
 
     let showPopup: boolean = false;
     let showBooking: boolean = false;
@@ -52,6 +51,8 @@
             return false;
         }
     }
+
+    document.addEventListener('contextmenu', event => event.preventDefault());
 </script>
 
 {#await invoke('get_database_path') then path}
